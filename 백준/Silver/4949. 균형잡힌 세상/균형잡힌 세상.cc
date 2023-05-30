@@ -1,29 +1,34 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-int ps_cnt, T, f;
-string s, ps = "()[]";
+string s;
+stack<char> stk;
+const string cmp = "()[]";
 
-bool is_vps(string a) {
-	stack<char> stk;
-	for (int i = 0; i < a.size(); i++) {
-		if (ps.find(a[i]) != string::npos) {
-			if (a[i] == '(' || a[i] == '[') stk.push(a[i]);
-			else if (!stk.empty() && a[i] == ')' && stk.top() == '(') stk.pop();
-			else if (!stk.empty() && a[i] == ']' && stk.top() == '[') stk.pop();
-			else return false;
-		}
-	}
-	if (stk.empty()) return true;
-	else return false;
-}
-
-int main(){
+int main() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL); cout.tie(NULL);
 
 	getline(cin, s);
-	while (s != ".") {
-		if (is_vps(s)) cout << "yes\n";
+	while (s.size() != 1 && s[0] != '.') {
+		for (int i = 0; i < s.size(); i++) {
+			//스택이 비어있고 괄호일 경우
+			if (stk.empty() && cmp.find(s[i]) != string::npos) stk.push(s[i]);
+			//이외 괄호일 경우
+			else if(cmp.find(s[i]) != string::npos) {
+				//스택 top과 괄호가 매치하면 pop()
+				if (stk.top() == '(' && s[i] == ')') stk.pop();
+				else if (stk.top() == '[' && s[i] == ']') stk.pop();
+				//이외 스택 push
+				else stk.push(s[i]);
+			}
+		}
+
+		if (stk.empty()) cout << "yes\n";
 		else cout << "no\n";
+
+		while (!stk.empty()) stk.pop();
+
 		getline(cin, s);
 	}
 
