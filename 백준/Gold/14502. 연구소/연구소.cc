@@ -1,73 +1,76 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-const int DIR = 4;
-const int NMAX = 9;
-const int MAX = NMAX * NMAX;
-vector<pair<int, int>> wcoordi;
-int mp[NMAX][NMAX], visited[NMAX][NMAX];
-int n, m, vcnt, af_vcnt, scnt,vmin = -1, ret;
-int my[DIR] = { 1, 0, -1, 0 };
-int mx[DIR] = { 0, 1, 0, -1 };
+const int MAX = 8;
+int n, m, cnt, ret;
+int my[4] = { 1, 0, -1, 0 }, mx[4] = { 0, 1, 0, -1 };
+int mp[MAX][MAX], visited[MAX][MAX], mp_temp[MAX][MAX];
+vector<pair<int, int>> space;
 
-void virus_DFS(int y, int x) {
+void DFS(int y, int x) {
 	if (visited[y][x] || mp[y][x] == 1) return;
-	visited[y][x] =1;
-	for (int i = 0; i < DIR; i++) {
-		int ny = y + my[i];
-		int nx = x + mx[i];
-		if (ny < 0 || ny >= n || nx < 0 || nx >= m || visited[ny][nx] || mp[ny][nx] == 1) continue;
-		virus_DFS(ny, nx);
+	visited[y][x] = 1;
+	mp_temp[y][x] = 2;
+	for (int d = 0; d < 4; d++) {
+		int ny = my[d] + y;
+		int nx = mx[d] + x;
+		if (ny < 0 || ny >= n || nx < 0 || nx >= m) continue;
+		DFS(ny, nx);
 	}
-	if (mp[y][x] == 0) af_vcnt++;
 	return;
 }
 
-int main(){
+int main() {
 	ios_base::sync_with_stdio(false);
 	cin.tie(NULL); cout.tie(NULL);
-	//입력
+
 	cin >> n >> m;
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < m; j++) {
 			cin >> mp[i][j];
-			if (mp[i][j] == 0) {
-				wcoordi.push_back({ i, j }); //벽 생성가능 공간
-				scnt++; //여백 크기
-			}
-			else if (mp[i][j] == 2) vcnt++;
+			if (!mp[i][j]) space.push_back({ i, j });
 		}
 	}
-	//벽이 세워질 수 있는 경우 완전 탐색
-	for (int i = 0; i< wcoordi.size() - 2; i++) {
-		mp[wcoordi[i].first][wcoordi[i].second] = 1;
-		for (int j = i + 1; j < wcoordi.size() - 1; j++) {
-			mp[wcoordi[j].first][wcoordi[j].second] = 1;
-			for (int k = j + 1; k < wcoordi.size(); k++) {
-				mp[wcoordi[k].first][wcoordi[k].second] = 1;
 
-				fill(&visited[0][0], &visited[n][m] + 1, 0);
-				af_vcnt = 0;
+	for (int i = 0; i < space.size() - 2; i++) {
+		for (int j = i + 1; j < space.size() - 1; j++) {
+			for (int k = j + 1; k < space.size(); k++) {\
+				//벽 세우기
+				mp[space[i].first][space[i].second] = 1;
+				mp[space[j].first][space[j].second] = 1;
+				mp[space[k].first][space[k].second] = 1;
+				//바이러스 전이 전 상태 불러오기 및 visited 초기화
+				copy(&mp[0][0], &mp[0][0] + MAX * MAX, &mp_temp[0][0]);
+				fill(&visited[0][0], &visited[0][0] + MAX * MAX, 0);
 
-				for (int dj = 0; dj < n; dj++) {
-					for (int dk = 0; dk < m; dk++) {
-						if (mp[dj][dk] == 2) {
-							virus_DFS(dj, dk);
-							//cout << "Dfs 완 \n";
-						}
+				//바이러스 뿌리기
+				for (int vi = 0; vi < n; vi++) {
+					for (int vj = 0; vj < m; vj++) {
+						if(mp_temp[vi][vj] == 2) DFS(vi, vj);
 					}
 				}
-				if (vmin == -1) vmin = af_vcnt;
-				else vmin = min(vmin, af_vcnt);
+		
 
-				mp[wcoordi[k].first][wcoordi[k].second] = 0;
+				//안전 영역 카운트
+				cnt = 0;
+				for (int si = 0; si < n; si++) {
+					for (int sj = 0; sj < m; sj++) {
+						if (mp_temp[si][sj] == 0) cnt++;
+					}
+				}
+
+				//최댓값 갱신
+				ret = max(cnt, ret);
+
+				//벽 철거
+				mp[space[i].first][space[i].second] = 0;
+				mp[space[j].first][space[j].second] = 0;
+				mp[space[k].first][space[k].second] = 0;
 			}
-			mp[wcoordi[j].first][wcoordi[j].second] = 0;
 		}
-		mp[wcoordi[i].first][wcoordi[i].second] = 0;
 	}
-	ret = scnt - vmin - 3 ;
-	cout << ret << "\n";
+
+	cout << ret;
 
 	return 0;
 }
