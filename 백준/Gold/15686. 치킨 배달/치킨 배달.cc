@@ -1,116 +1,105 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-const int NMX = 50, MMX = 13;
-int n, m, cnt, ret = NMX * NMX;
-int mp[NMX][NMX], ret_mp[NMX][NMX];
-int my[4] = {1, 0, -1, 0}, mx[4] = {0, 1, 0, -1};
-vector<pair<int, int>> clist, hlist, cl;
+const int MAX = 50;
+int n, m, cnt, ret, min_dis = 2098765432;
+int mp[MAX][MAX], visited[MAX][MAX], dis[MAX][MAX];
+int my[4] = { 1, 0, -1, 0 }, mx[4] = { 0, 1, 0, -1 };
+vector<pair<int, int>> chicken, home, com;
 
-//집마다 최소 거리 합
-int sum_dis() {
-	int sum = 0;
-	for (int i = 0; i < hlist.size(); i++) sum += ret_mp[hlist[i].first][hlist[i].second];
-	return sum;
-}
-
-//치킨집부터 BFS수행하며 최솟값 갱신
-void bfs(int y, int x) {
-	int visited[NMX][NMX];
-	fill(&visited[0][0], &visited[0][0] + NMX * NMX, 0);
-	queue<pair<int, int >> q;
-	q.push({ y, x });
+//BFS로 탐색하며 visited에 거리 저장
+void BFS(int y, int x) {
+	queue<pair<int, int>> q;
 	visited[y][x] = 1;
-    //cout << "in bfs\n";
-	do {
-		for (int i = 0; i < 4; i++) {
-			//cout << "in dir\n";
-			int ny = q.front().first + my[i];
-			int nx = q.front().second + mx[i];
-			if (ny < 0 || ny >= n || nx < 0 || nx >= n || visited[ny][nx])continue;
-		    visited[ny][nx] = visited[q.front().first][q.front().second] + 1;
-			if (mp[ny][nx] == 1) {
-				//cout << "ny, nx : " << ny << ", " << nx << "\n";
-				//cout << "visited[ny][nx] : " << visited[ny][nx] << "\n";
-				ret_mp[ny][nx] = min(ret_mp[ny][nx], visited[ny][nx] - 1);
-			}
-			q.push({ ny,nx });
-		}
+	q.push({ y, x });
+	while (q.size()) {
+		int nowy = q.front().first;
+		int nowx = q.front().second;
 		q.pop();
-	} while (q.size());
+		for (int d = 0; d < 4; d++) {
+			int ny = my[d] + nowy;
+			int nx = mx[d] + nowx;
+			if (ny < 0 || ny >= n || nx < 0 || nx >= n || visited[ny][nx]) continue;
+			visited[ny][nx] = visited[nowy][nowx] + 1;
+			q.push({ ny, nx });
+		}
+	}
 	return;
 }
 
-//해당 조합일 때 최소 치킨거리
-int ck_dis(vector<pair<int, int>>* cl) {
-	int min_ret = 0;
-	//치킨집에서 bfs 시작
-	fill(&ret_mp[0][0], &ret_mp[0][0] + NMX * NMX, 2 * NMX + 1); //최솟값을 찾기위한 초기화
-	for (int i = 0; i < (*cl).size(); i++) bfs((*cl)[i].first, (*cl)[i].second);
-	//집마다 치킨거리 더하기
-	min_ret = sum_dis();
-	return min_ret;
-}
-
-
-void combi(vector<pair<int, int>> * cl, int start) {
-	//cl.sizE()개 중 r개 조합으로 경우의 수
-	if ((*cl).size() == m) {
-		//치킨집 조합 테스트
+//경우의 수를 구하고, 해당 경우에서 최소 치킨 거리를 갱신
+void combi(int idx) {
+	if (com.size() == m) {
 		/*
-		cout << "조합테스트\n";
-		for (int i = 0; i < cl->size(); i++) {
-			cout <<  "(" << (*cl)[i].first << "," << (*cl)[i].second << ")  ";
+		cout << "            combi        \n";
+
+		for (int i = 0; i < com.size(); i++)
+		{
+			cout << "(" << com[i].first << ", " << com[i].second << ")        ";
 		}
+
 		cout << "\n";
 		*/
-		int temp = ck_dis(cl);
-		ret = min(temp, ret);
+		//경우의 수 생성, com의 치킨집 좌표 마다 BFS 실행
+		int sum = 0;
+		fill(&dis[0][0], &dis[0][0] + MAX * MAX, 2098765432);
+		for (int i = 0; i < com.size(); i++) {
+			fill(&visited[0][0], &visited[0][0] + MAX * MAX, 0);
+			BFS(com[i].first, com[i].second);
+			//visited 와 dis min()을 통해 갱신
+			for (int j = 0; j < home.size(); j++) {
+				int hy = home[j].first;
+				int hx = home[j].second;
+				dis[hy][hx] = min(dis[hy][hx], visited[hy][hx] - 1);
+			}
+		}
+
+		//치킨 거리 합 구하고 최소값 갱신
+		for (int i = 0; i < home.size(); i ++) {
+			sum += dis[home[i].first][home[i].second];
+		}
+		min_dis = min(min_dis, sum);
 
 		return;
 	}
 
-	for (int i = start + 1; i < clist.size(); i++) {
-		cl->push_back(clist[i]);
-		//cout << "push : " << clist[i].first << ", " << clist[i].second << "\n";
-		combi(cl, i);
-		//cout << "pop : " << (*cl)[cl->size() - 1].first << ", " << (*cl)[cl->size() - 1].first << "\n";
-		cl->pop_back();
+	for (int i = idx + 1; i < chicken.size(); i++) {
+		com.push_back(chicken[i]);
+		combi(i);
+		com.pop_back();
 	}
-	return;
-}
 
-//입력
-void input() {
-	cin >> n >> m;
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			cin >> mp[i][j];
-			if (mp[i][j] == 2) {
-				clist.push_back({ i, j }); //치킨 좌표
-				//cout << "push i j c  : " << i << ", " << j << "\n";
-				mp[i][j] = 0;
-			}
-			else if (mp[i][j] == 1) hlist.push_back({ i, j }); //집 좌표
-		}
-	}
 	return;
-}
-
-//출력
-void output() {
-	cout << ret << "\n";
 }
 
 int main() {
 	ios_base::sync_with_stdio(false);
 	cin.tie(NULL); cout.tie(NULL);
-	
-	input();
+	//입력
+	cin >> n >> m;
+	for (int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++){
+			cin >> mp[i][j];
+			if (mp[i][j] == 2) chicken.push_back({ i, j });
+			if (mp[i][j] == 1) home.push_back({i, j});
+		}
+	}
 
-	combi(&cl, -1);
+	combi(-1);
 
-	output();
+	//vector chicken으로 경우의 수만큼 반복
 
-	return 0; 
+	//초기화
+
+	//치킨집에서 BFS를 수행하며 집마다 최소거리 갱신
+
+	//치킨 거리 합
+
+	//최소값 갱신
+
+	//출력
+
+	cout << min_dis;
+
+	return 0;
 }
