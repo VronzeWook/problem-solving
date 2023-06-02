@@ -1,7 +1,7 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-const int MAX = 2048;
+const int MAX = 1024;
 int arr[MAX], k, n;
 vector<int> bi_tree[13];
 
