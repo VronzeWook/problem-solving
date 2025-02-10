@@ -101,5 +101,6 @@ int main() {
 //         compressed += inputTemp;
 //         result = min(result, (int)compressed.length());
 //     }
+//
 //     return result;
 // }
